@@ -1,0 +1,84 @@
+_schema-version: "3.2"
+ID: MyFioriDemo
+version: 0.0.1
+modules:
+- name: MyFioriDemo-destination-content
+  type: com.sap.application.content
+  requires:
+  - name: MyFioriDemo-destination-service
+    parameters:
+      content-target: true
+  - name: MyFioriDemo_html_repo_host
+    parameters:
+      service-key:
+        name: MyFioriDemo_html_repo_host-key
+  - name: uaa_MyFioriDemo
+    parameters:
+      service-key:
+        name: uaa_MyFioriDemo-key
+  parameters:
+    content:
+      instance:
+        destinations:
+        - Name: bpfioridemo_MyFioriDemo_html_repo_host
+          ServiceInstanceName: MyFioriDemo-html5-app-host-service
+          ServiceKeyName: MyFioriDemo_html_repo_host-key
+          sap.cloud.service: bpfioridemo
+        - Authentication: OAuth2UserTokenExchange
+          Name: bpfioridemo_uaa_MyFioriDemo
+          ServiceInstanceName: MyFioriDemo-xsuaa-service
+          ServiceKeyName: uaa_MyFioriDemo-key
+          sap.cloud.service: bpfioridemo
+        existing_destinations_policy: ignore
+  build-parameters:
+    no-source: true
+- name: MyFioriDemo_ui_deployer
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: MyFioriDemo_html_repo_host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - BusinessPartners-content.zip
+      name: BusinessPartners
+      target-path: resources/
+- name: BusinessPartners
+  type: html5
+  path: BusinessPartners
+  build-parameters:
+    builder: custom
+    commands:
+    - npm run build
+    supported-platforms: []
+resources:
+- name: MyFioriDemo-destination-service
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: true
+      version: 1.0.0
+    service: destination
+    service-name: MyFioriDemo-destination-service
+    service-plan: lite
+- name: MyFioriDemo_html_repo_host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: MyFioriDemo-html5-app-host-service
+    service-plan: app-host
+- name: uaa_MyFioriDemo
+  type: org.cloudfoundry.managed-service
+  parameters:
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: MyFioriDemo-xsuaa-service
+    service-plan: application
+build-parameters:
+  before-all:
+  - builder: custom
+    commands:
+    - npm install
